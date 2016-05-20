@@ -19,6 +19,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int8MultiArray.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 
@@ -36,6 +37,8 @@ class Hrov_arm_control
 		~Hrov_arm_control();
 		
 		bool	robotControl;
+
+		double	thrustersInput[5];
 		
 		std_msgs::Int8MultiArray	safetyMeasureAlarm;
 		std_msgs::Int8MultiArray	userControlAlarm;
@@ -48,12 +51,13 @@ class Hrov_arm_control
 	private:
 		void safetyMeasuresCallback(const std_msgs::Int8MultiArray::ConstPtr& msg);
 		void userControlCallback(const std_msgs::Int8MultiArray::ConstPtr& msg);
+		void thrustersInputCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
 
+		ros::NodeHandle				nh;
 
-		ros::NodeHandle nh;
-
-		ros::Subscriber sub_safetyMeasures;
-		ros::Subscriber sub_userControl;
+		ros::Subscriber				sub_safetyMeasures;
+		ros::Subscriber				sub_userControl;
+		ros::Subscriber				sub_thrusterInput;
 
 		tf::Transform 				transform_init, transform_new;
 		tf::StampedTransform 		transform;

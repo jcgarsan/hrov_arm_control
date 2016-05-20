@@ -18,11 +18,12 @@
 #include <visp/vpHomogeneousMatrix.h>
 #include <cmath>
 
-#define num_sensors			2		// 0 = is there an alarm?, 1 = surface, 2 = seafloor
+#define num_sensors			 2		// 0 = is there an alarm?, 1 = surface, 2 = seafloor
 
 //DEBUG Flags
-#define DEBUG_FLAG_SAFETY	0
-#define DEBUG_FLAG_USER		0
+#define DEBUG_FLAG_SAFETY	 0
+#define DEBUG_FLAG_USER		 0
+#define DEBUT_FLAG_THRUSTERS 1
 
 
 using namespace std;
@@ -33,6 +34,9 @@ Hrov_arm_control::Hrov_arm_control()
 	//initializing values
 	robotControl = true;
 
+	for (int i=0; i<5; i++)
+		thrustersInput[i] = 0.0;
+
 	for (int i=0; i<=num_sensors; i++)
 		safetyMeasureAlarm.data.push_back(0);
 	for (int i=0; i<2; i++)
@@ -41,6 +45,7 @@ Hrov_arm_control::Hrov_arm_control()
 	//Subscriber initialization (sensors)
 	sub_safetyMeasures = nh.subscribe<std_msgs::Int8MultiArray>("safetyMeasuresAlarm", 1, &Hrov_arm_control::safetyMeasuresCallback, this);
 	sub_userControl = nh.subscribe<std_msgs::Int8MultiArray>("userControlAlarm", 1, &Hrov_arm_control::userControlCallback, this);
+	sub_thrusterInput = nh.subscribe<std_msgs::Float64MultiArray>("g500/thrusters_input", 1, &Hrov_arm_control::thrustersInputCallback, this);
 
 	//Arm control
 	robot = new ARM5Arm(nh, "uwsim/joint_state", "uwsim/joint_state_command");
@@ -79,6 +84,22 @@ void Hrov_arm_control::userControlCallback(const std_msgs::Int8MultiArray::Const
 	if (DEBUG_FLAG_USER)
 		cout << "userControlCallback: [" << (int) userControlAlarm.data[0] << ", " << (int) userControlAlarm.data[1] << "]" << endl;
 }
+
+
+void Hrov_arm_control::thrustersInputCallback(const std_msgs::Float64MultiArray::ConstPtr& msg)
+{
+	for (int i=0; i<5; i++)
+		thrustersInput[i] = msg->data[i];
+
+	if (DEBUT_FLAG_THRUSTERS)
+	{
+		cout << "thrustersInput: [";
+		for (int i=0; i<5; i++)
+			cout << thrustersInput[i] << ";";
+		cout << "]" << endl;
+	}
+}
+
 
 
 int main(int argc, char **argv)
