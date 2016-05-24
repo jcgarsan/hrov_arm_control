@@ -22,7 +22,6 @@
 #include <std_msgs/Float64MultiArray.h>
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
-
 #include <mar_robot_arm5e/ARM5Arm.h>
 
 
@@ -36,33 +35,34 @@ class Hrov_arm_control
 		Hrov_arm_control();
 		~Hrov_arm_control();
 		
-		bool	robotControl;
+		bool						robotControl;
+		bool 						armMoving;
 
-		double	thrustersInput[5];
+		double						armInput[3];
 		
 		std_msgs::Int8MultiArray	safetyMeasureAlarm;
 		std_msgs::Int8MultiArray	userControlAlarm;
 
-		ARM5Arm *robot;
-		vpHomogeneousMatrix desired_bMe, bMe;
-		vpColVector next_joints;
+		ARM5Arm 					*robot;
+		vpHomogeneousMatrix 		desired_bMe, bMe;
+		vpColVector 				next_joints;
 
 
 	private:
 		void safetyMeasuresCallback(const std_msgs::Int8MultiArray::ConstPtr& msg);
 		void userControlCallback(const std_msgs::Int8MultiArray::ConstPtr& msg);
-		void thrustersInputCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
+		void armInputCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
+		void armControl();
 
 		ros::NodeHandle				nh;
 
 		ros::Subscriber				sub_safetyMeasures;
 		ros::Subscriber				sub_userControl;
-		ros::Subscriber				sub_thrusterInput;
+		ros::Subscriber				sub_armInput;
 
 		tf::Transform 				transform_init, transform_new;
 		tf::StampedTransform 		transform;
 		tf::Quaternion				q_init, q_new;
 		tf::TransformBroadcaster	br;
 		tf::TransformListener		*listener;
-
 };
