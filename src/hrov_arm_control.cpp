@@ -24,8 +24,6 @@
 #define DEBUG_FLAG_SAFETY	 0
 #define DEBUG_FLAG_USER		 0
 #define DEBUG_FLAG_ARM_INPUT 1
-#define DEBUG_FLAG_ARM_DATA  1
-
 
 using namespace std;
 
@@ -33,9 +31,6 @@ using namespace std;
 Hrov_arm_control::Hrov_arm_control()
 {
 	//initializing values
-	robotControl = true;
-	armMoving	 = false;	
-
 	for (int i=0; i<3; i++)
 		armInput[i] = 0.0;
 
@@ -51,9 +46,6 @@ Hrov_arm_control::Hrov_arm_control()
 
 	//Arm control
 	robot = new ARM5Arm(nh, "uwsim/joint_state", "uwsim/joint_state_command");
-
-
-
 }
 
 
@@ -94,7 +86,7 @@ void Hrov_arm_control::userControlCallback(const std_msgs::Int8MultiArray::Const
 void Hrov_arm_control::armInputCallback(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
 	for (int i=0; i<3; i++)
-		armInput[i] = msg->data[i]/10;
+		armInput[i] = msg->data[i];
 
 	if (DEBUG_FLAG_ARM_INPUT)
 	{
@@ -105,99 +97,20 @@ void Hrov_arm_control::armInputCallback(const std_msgs::Float64MultiArray::Const
 	}
 }
 
+
 void Hrov_arm_control::armControl()
 {
-	vpColVector current_joints(5), send_joints(5);
+	vpColVector desiredVel(6);
 
-	if(robot->getJointValues(current_joints))
-	{		
-		bMe=robot->directKinematics(current_joints);
-		if (DEBUG_FLAG_ARM_DATA)
-			cout << "after bMe" << endl << bMe << endl;
-	}
-	
-	//Calculate the base-end effector matrix
-	if (!armMoving)
-	{
-		desired_bMe = bMe;
-		desired_bMe[0][3]-= armInput[0]; //currentPosition.pose.position.x;
-		desired_bMe[1][3]-= armInput[2]; //currentPosition.pose.orientation.z; 
-		desired_bMe[2][3]-= armInput[1]; //currentPosition.pose.position.y;
-		next_joints = robot->armIK(desired_bMe);
-		if (DEBUG_FLAG_ARM_DATA)
-		{
-			cout << "Desired joints" << endl << next_joints << endl;
-			cout << "Desired bMe" << endl << desired_bMe << endl;
-		}
-	}			
-		
-	//If valid joints and reasonable new position ... ask to MOVE
-	if ((next_joints[0] > -1.57) and (next_joints[0] < 2.1195) and (next_joints[1] > 0) and \
-		(next_joints[1] < 1.58665) and (next_joints[2] > 0) and (next_joints[2] < 2.15294))			// join limits
-	{ //dist (m) entre current y desire
-		if (((std::abs(desired_bMe[0][3] - bMe[0][3]) < 1.5) and \
-			(std::abs(desired_bMe[1][3] - bMe[1][3]) < 1.5) and \
-			(std::abs(desired_bMe[2][3] - bMe[2][3]) < 1.5)) and
-			((std::abs(desired_bMe[0][3] - bMe[0][3]) > 0) or \
-			(std::abs(desired_bMe[1][3] - bMe[1][3]) > 0) or \
-			(std::abs(desired_bMe[2][3] - bMe[2][3]) > 0)))
-		{
-			armMoving = true;
-			ROS_INFO("Moving...");
-		}
-		else
-			ROS_INFO("Error: New position too far form the original position.");
-	}
-	else
-		ROS_INFO("Error: Unreachable position.");			
-	
-	//Send the parameters
-	if(armMoving)
-	{
-		//Check if it's almost there
-		if((std::abs(desired_bMe[0][3] - bMe[0][3]) > 0.01) || \
-			(std::abs(desired_bMe[1][3] - bMe[1][3]) > 0.01) || \
-			(std::abs(desired_bMe[2][3] - bMe[2][3]) > 0.01))
-		{
-//			ROS_INFO("Info: Moving to desired position.");
-			send_joints[0]=next_joints[0]-current_joints[0];
-			send_joints[1]=next_joints[1]-current_joints[1];
-			send_joints[2]=next_joints[2]-current_joints[2];
-			ROS_INFO_STREAM (send_joints[0]<<"::"<<send_joints[1]<<"::"<<send_joints[2]);
-		}
-		else
-		{
-//			ROS_INFO("Info: Position reached");
-			send_joints[0]=0;
-			send_joints[1]=0;
-			send_joints[2]=0;
-			armMoving=false;
-		}
-	}
-	else
-	{
-//		ROS_INFO("Info: arm is not moving.");
-		send_joints[0]=0;
-		send_joints[1]=0;
-		send_joints[2]=0;		
-	}
-	
-	//Gripper rotation & apperture control
-/*	if (gripperRotation == 0)
-		send_joints[3] = 0;
-	else if (gripperRotation == 1)
-		send_joints[3] = 0.05;
-	else
-		send_joints[3] = -0.05;
-	if (gripperApperture == 0)
-		send_joints[4] = 0;
-	else if (gripperApperture == 1)
-		send_joints[4] = 0.05;
-	else
-		send_joints[4] = -0.05;		*/
+	desiredVel[0] = armInput[0];
+	desiredVel[1] = armInput[1];
+	desiredVel[2] = armInput[2];
 
-	robot->setJointVelocity(send_joints);
+	desiredVel[3] = 0;
+	desiredVel[4] = 0;
+	desiredVel[5] = 0;
 
+	robot->setCartesianVelocity(desiredVel);
 }
 
 

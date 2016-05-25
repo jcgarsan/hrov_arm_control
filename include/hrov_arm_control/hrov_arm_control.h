@@ -20,8 +20,6 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int8MultiArray.h>
 #include <std_msgs/Float64MultiArray.h>
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
 #include <mar_robot_arm5e/ARM5Arm.h>
 
 
@@ -35,17 +33,12 @@ class Hrov_arm_control
 		Hrov_arm_control();
 		~Hrov_arm_control();
 		
-		bool						robotControl;
-		bool 						armMoving;
-
 		double						armInput[3];
 		
 		std_msgs::Int8MultiArray	safetyMeasureAlarm;
 		std_msgs::Int8MultiArray	userControlAlarm;
 
 		ARM5Arm 					*robot;
-		vpHomogeneousMatrix 		desired_bMe, bMe;
-		vpColVector 				next_joints;
 
 
 	private:
@@ -60,9 +53,4 @@ class Hrov_arm_control
 		ros::Subscriber				sub_userControl;
 		ros::Subscriber				sub_armInput;
 
-		tf::Transform 				transform_init, transform_new;
-		tf::StampedTransform 		transform;
-		tf::Quaternion				q_init, q_new;
-		tf::TransformBroadcaster	br;
-		tf::TransformListener		*listener;
 };
