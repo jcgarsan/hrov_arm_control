@@ -39,6 +39,13 @@ Hrov_arm_control::Hrov_arm_control()
 	for (int i=0; i<2; i++)
 		userControlAlarm.data.push_back(0);
 
+	for (int i=0; i<5; i++)
+	{
+//		js.position.push_back(0);
+		js.velocity.push_back(0);
+//		js.effort.push_back(0);
+	}
+
 	//Subscriber initialization (sensors)
 	sub_safetyMeasures = nh.subscribe<std_msgs::Int8MultiArray>("safetyMeasuresAlarm", 1, &Hrov_arm_control::safetyMeasuresCallback, this);
 	sub_userControl = nh.subscribe<std_msgs::Int8MultiArray>("userControlAlarm", 1, &Hrov_arm_control::userControlCallback, this);
@@ -46,6 +53,9 @@ Hrov_arm_control::Hrov_arm_control()
 
 	//Arm control
 	robot = new ARM5Arm(nh, "uwsim/joint_state", "uwsim/joint_state_command");
+
+   	pub_arm = nh.advertise<sensor_msgs::JointState>("/uwsim/joint_state_command", 1); //, &Uial::leapHandCallback, this);
+
 }
 
 
@@ -86,15 +96,13 @@ void Hrov_arm_control::userControlCallback(const std_msgs::Int8MultiArray::Const
 void Hrov_arm_control::armInputCallback(const std_msgs::Float64MultiArray::ConstPtr& msg)
 {
 	for (int i=0; i<3; i++)
+	{
 		armInput[i] = msg->data[i]/3;
+		js.velocity[i] = msg->data[i]/2;
+	}
 
 	if (DEBUG_FLAG_ARM_INPUT)
-	{
-		cout << "armInput: [";
-		for (int i=0; i<3; i++)
-			cout << armInput[i] << "; ";
-		cout << "]" << endl;
-	}
+		cout << "js.velocity: " << js.velocity[0] << "; " << js.velocity[1] << "; " << js.velocity[2] << endl;
 }
 
 
@@ -104,7 +112,7 @@ void Hrov_arm_control::armControl()
 
 	if (!safetyMeasureAlarm.data[2])
 	{
-		desiredVel[0] = armInput[0];
+/*		desiredVel[0] = armInput[0];
 		desiredVel[1] = armInput[1];
 		desiredVel[2] = armInput[2];
 
@@ -113,6 +121,8 @@ void Hrov_arm_control::armControl()
 		desiredVel[5] = 0;
 		
 		robot->setCartesianVelocity(desiredVel);
+*/
+		pub_arm.publish(js);
 	}	
 	else
 		cout << "There is a safety alarm: too close to the seafloor. The arm can not be moved manually." << endl;

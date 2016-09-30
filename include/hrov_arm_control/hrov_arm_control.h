@@ -38,6 +38,8 @@ class Hrov_arm_control
 		std_msgs::Int8MultiArray	safetyMeasureAlarm;
 		std_msgs::Int8MultiArray	userControlAlarm;
 
+		sensor_msgs::JointState 	js;
+
 		ARM5Arm 					*robot;
 
 
@@ -53,4 +55,5 @@ class Hrov_arm_control
 		ros::Subscriber				sub_userControl;
 		ros::Subscriber				sub_armInput;
 
+		ros::Publisher				pub_arm;
 };
